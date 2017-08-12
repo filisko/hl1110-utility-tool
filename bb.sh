@@ -123,7 +123,31 @@ function cmd_get_printer_status_code()
     echo "$status"
 }
 
-# Translate code to message
+
+# Get printer's printed pages number
+function cmd_get_printer_num_prints()
+{
+    send_pjl "$1" "INFO PAGECOUNT"
+
+    declare output=$(get_printer_output "$1")
+    declare num_prints=$(echo "$output" | sed -n '/^PAGECOUNT=67/p' | cut -d "=" -f2 | tr -d '\n' | tr -d '\r')
+
+    echo "$num_prints"
+}
+
+# Reset all printer's values
+function cmd_reset_printer()
+{
+    send_pjl "$1" "EXECUTE REVIVALRESET"
+}
+
+# Print printer's config
+function cmd_print_printer_config()
+{
+    send_pjl "$1" "EXECUTE PRTCONFIG"
+}
+
+# Translate printer's status code to human readable message
 function get_message_by_status_code()
 {
   case "$1" in
@@ -269,36 +293,13 @@ function get_message_by_status_code()
   esac
 }
 
-# Get printer's printed pages number
-function cmd_get_printer_num_prints()
-{
-    send_pjl "$1" "INFO PAGECOUNT"
-
-    declare output=$(get_printer_output "$1")
-    declare num_prints=$(echo "$output" | sed -n '/^PAGECOUNT=67/p' | cut -d "=" -f2 | tr -d '\n' | tr -d '\r')
-
-    echo "$num_prints"
-}
-
-# Reset all printer's values
-function cmd_reset_printer()
-{
-    send_pjl "$1" "EXECUTE REVIVALRESET"
-}
-
-# Print printer's config
-function cmd_print_printer_config()
-{
-    send_pjl "$1" "EXECUTE PRTCONFIG"
-}
-
 # code=$(cmd_get_printer_status_code "/dev/usb/lp0")
 # get_message_by_status_code "$code"
 #
 # cmd_get_printer_num_prints "/dev/usb/lp0"
 
 # send "/dev/usb/lp0" "INFO PAGECOUNT" 1
-exit
+# exit
 
 
 # Variables
@@ -340,116 +341,86 @@ while true; do
         --ok-label="Go back"
 
         let "NUM_DETECTION_TRIES++"
+
+      elif [ $printers_num -gt 1 ]; then
+        zenity \
+        --warning \
+        --title="$APP_NAME" \
+        --text="It seems that you have multiple HL-1110 printers connected. Connect only one please." \
+        --ok-label="Go back"
       else
-        # If there is only one
-        if [ $printers_num -eq 1 ]; then
-          SELECTED_PRINTER="$printers"
-        else
-          while true; do
-            SELECTED_PRINTER=$(
-              zenity --list \
-              --title="$APP_NAME" \
-              --text="You have multiple HL-1110 printers connected!\nSelect only one please." \
-              --column="Printer path" \
-              --width=400 --height=250 \
-              --cancel-label="Go back" \
-              --ok-label="Select" \
-              $printers
-            )
+        while true; do
+          # ACTIONS
+          ACTION_SHOW_STATUS="Show current printer status"
+          ACTION_SHOW_NUM_PRINTED="Show number of printed pages"
+          ACTION_PRINT_INFO="Print printer's current status information"
+          ACTION_RESET_CONFIG="Reset all printer values (toner, drum, pagecount, etc.)"
 
-            if [ $? -eq 0 ]; then
-              if [ $SELECTED_PRINTER ]; then
-                break
-              else
-                zenity \
-                --warning \
-                --title="$APP_NAME" \
-                --text="Select a printer to proceed please." \
-                --ok-label="Go back"
-              fi
-            else
-              break
-            fi
-          done
-        fi
+          action=$(
+            zenity --list \
+            --title="$APP_NAME" \
+            --text="Select an action to perform on the connected HL-1110 printer." \
+            --column="Action" \
+            --width=400 --height=250 \
+            --cancel-label="Exit" \
+            --ok-label="Execute" \
+              "$ACTION_SHOW_STATUS" \
+              "$ACTION_SHOW_NUM_PRINTED" \
+              "$ACTION_PRINT_INFO" \
+              "$ACTION_RESET_CONFIG"
+          )
+          if [ $? -eq 0 ]
+          then
+            case $action in
+              "$ACTION_SHOW_STATUS")
+                (
+                  cmd_code=$(send "$SELECTED_PRINTER" "INFO STATUS" 1 | sed -n '2p' | cut -c 6- | tr -d '\r' | tr -d '\n')
+                  status_message=$(get_status_message_by_code $cmd_code)
+                  echo "# Status code: $cmd_code\nMessage: $status_message"
+                ) | zenity --progress \
+                  --title="$APP_NAME" \
+                  --text="Getting current printer status code ..." \
+                  --pulsate \
+                  --width=300 \
 
-        # Once printer is selected, show available actions
-        if [ $SELECTED_PRINTER ]; then
-          while true; do
-            # ACTIONS
-            ACTION_SHOW_STATUS="Show current printer status"
-            ACTION_SHOW_NUM_PRINTED="Show number of printed pages"
-            ACTION_PRINT_INFO="Print printer's current status information"
-            ACTION_RESET_CONFIG="Reset all printer values (toner, drum, pagecount, etc.)"
+                  --no-cancel
+              ;;
+              "$ACTION_SHOW_NUM_PRINTED")
+                (
+                  cmd_pagecount=$(send "$SELECTED_PRINTER" "INFO PAGECOUNT" 1 | sed -n '2p' | cut -c 11-)
+                  echo "# Number of printed pages is: $cmd_pagecount"
+                ) | zenity --progress \
+                  --title="$APP_NAME" \
+                  --text="Getting number of printed pages ..." \
+                  --pulsate \
 
-            action=$(
-              zenity --list \
-              --title="$APP_NAME" \
-              --text="Select an action to perform on the connected HL-1110 printer." \
-              --column="Action" \
-              --width=400 --height=250 \
-              --cancel-label="Exit" \
-              --ok-label="Execute" \
-                "$ACTION_SHOW_STATUS" \
-                "$ACTION_SHOW_NUM_PRINTED" \
-                "$ACTION_PRINT_INFO" \
-                "$ACTION_RESET_CONFIG"
-            )
-            if [ $? -eq 0 ]
-            then
-              case $action in
-                "$ACTION_SHOW_STATUS")
-                  (
-                    # @PJL INFO STATUS
-                    # CODE=10003
-                    # DISPLAY="WARMING UP    "
-                    # ONLINE=TRUE
-                    cmd_code=$(send "$SELECTED_PRINTER" "INFO STATUS" 1 | sed -n '2p' | cut -c 6- | tr -d '\r' | tr -d '\n')
-                    status_message=$(get_status_message_by_code $cmd_code)
-                    echo "# Status code: $cmd_code\nMessage: $status_message"
-                  ) | zenity --progress \
-                    --title="$APP_NAME" \
-                    --text="Getting current printer status code ..." \
-                    --pulsate \
-                    --width=300 \
-                    --no-cancel
-                ;;
-                "$ACTION_SHOW_NUM_PRINTED")
-                  (
-                    cmd_pagecount=$(send "$SELECTED_PRINTER" "INFO PAGECOUNT" 1 | sed -n '2p' | cut -c 11-)
-                    echo "# Number of printed pages is: $cmd_pagecount"
-                  ) | zenity --progress \
-                    --title="$APP_NAME" \
-                    --text="Getting number of printed pages ..." \
-                    --pulsate \
-                    --width=300 \
-                    --no-cancel
-                ;;
-                "$ACTION_PRINT_INFO")
-                  zenity --question \
-                  --text="This will print a page with detailed info. about your printer.\n\nDo you want to proceed?" \
-                  --ellipsize
-                  if [ $? -eq 0 ]
-                  then
-                    send "$SELECTED_PRINTER" "EXECUTE PRTCONFIG"
-                  fi
-                ;;
-                "$ACTION_RESET_CONFIG")
-                  zenity --question \
-                  --text="This will reset all your printer values.\n\nDo you want to proceed?" \
-                  --ellipsize
-                  if [ $? -eq 0 ]
-                  then
-                    send "$SELECTED_PRINTER" "EXECUTE REVIVALRESET"
-                  fi
-                ;;
-              esac
-            else
-              # Good bye
-              exit
-            fi
-          done
-        fi
+                  --width=300 \
+                  --no-cancel
+              ;;
+              "$ACTION_PRINT_INFO")
+                zenity --question \
+                --text="This will print a page with detailed info. about your printer.\n\nDo you want to proceed?" \
+                --ellipsize
+                if [ $? -eq 0 ]
+                then
+                  send "$SELECTED_PRINTER" "EXECUTE PRTCONFIG"
+                fi
+              ;;
+              "$ACTION_RESET_CONFIG")
+                zenity --question \
+                --text="This will reset all your printer values.\n\nDo you want to proceed?" \
+                --ellipsize
+                if [ $? -eq 0 ]
+                then
+                  send "$SELECTED_PRINTER" "EXECUTE REVIVALRESET"
+                fi
+              ;;
+            esac
+          else
+            # Good bye
+            exit
+          fi
+        done
       fi
     ;;
     1)
