@@ -33,39 +33,20 @@ function is_valid_printer()
 {
   local printer_path="$1"
   if  [ -c "$printer_path" ] && [ $(sudo usb_printerid "$printer_path" | grep "HL-111[0-9] series" -c) -gt 0 ]; then
-  # if  [ $(sudo cat "$lp_device" | grep "HL-111[0-9] series" -c) -eq 0 ]; then
     echo 1
+  elif ! [ -c "$printer_path" ]; then
+    rm "$printer_path"
   fi
 }
 
 # Get HL-1110 connected printers
 function get_printers()
 {
-  local -a lp_devices=($(ls /dev/usb/lp* 2> /dev/null))
-  local printer_path=""
-
-  for i in "${!lp_devices[@]}"; do
-    printer_path=${lp_devices[$i]}
-
-    if  [ ! $(is_valid_printer "$printer_path") ]; then
-    # if  [ $(sudo cat "$lp_device" | grep "HL-111[0-9] series" -c) -eq 0 ]; then
-      unset lp_devices[${i}]
+  ls -1 /dev/usb/lp* 2> /dev/null | while read lp_path; do
+    if  [ $(is_valid_printer "$lp_path") ]; then
+      echo "$lp_path"
     fi
   done
-
-  echo ${lp_devices[@]}
-}
-
-# Count printers (must pass the result of get_printers() as parameter)
-function count_printers()
-{
-  local -i count
-  if [ -z "$1" ]; then
-    count=0
-  else
-    count=$(($(echo "$1" | grep -o ' ' | wc -l)+1))
-  fi
-  echo $count
 }
 
 # Send PJL commands to the printer
@@ -77,7 +58,7 @@ function send_pjl()
     while true; do
       sleep 0.5
 
-      # Continue only if printer is not busy
+      # Continue after printer is not busy (if it's at all!)
       while true; do
         fuser -s "$printer_path"
         if [ $? -ne 0 ]
@@ -316,9 +297,9 @@ while true; do
   case $? in
     0)
       declare printers=$(get_printers)
-      declare -i printers_num=$(count_printers "$printers")
+      declare -i num_printers=$(grep -o "/" <<< "$printers" | wc -l | awk '{print $1/3}')
 
-      if [ $printers_num -eq 0 ]; then
+      if [ "$num_printers" -eq 0 ]; then
         zenity \
         --warning \
         --title="$APP_NAME" \
@@ -326,11 +307,12 @@ while true; do
         --ok-label="Go back"
 
         let "NUM_DETECTION_TRIES++"
-      elif [ $printers_num -gt 1 ]; then
+      elif [ "$num_printers" -gt 1 ]; then
         zenity \
         --warning \
         --title="$APP_NAME" \
-        --text="It seems that you have multiple HL-1110 printers connected. Leave only one please." \
+        --text="You have "$num_printers" HL-1110 printers connected.\nLeave only one please." \
+        --ellipsize \
         --ok-label="Go back"
       else
         while true; do
