@@ -1,0 +1,11 @@
+[Desktop Entry]
+Encoding=UTF-8
+Exec=/usr/local/bin/hl1110-resetter.sh
+Icon=/usr/opt/hl1110-resetter/icon.svg
+Type=Application
+Terminal=false
+Comment=Brother HL-1110 printer resetter tool
+Name=Brother HL-1110 resetter
+GenericName=hl1110-resetter
+StartupNotify=false
+Categories=Utility;

@@ -1,0 +1,9 @@
+Package: hl1110-resetter
+Version: 1.0
+Section: utils
+Priority: optional
+Architecture: all
+Depends: zenity
+Maintainer: Filis Futsarov <filisfutsarov@gmail.com>
+Description:
+  Brother HL-1110 printer resetter.

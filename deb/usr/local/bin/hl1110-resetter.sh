@@ -18,15 +18,14 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
+# ASK FOR ADMIN PRIVILEGES
+if [ $EUID != 0 ]; then
+  gksudo "$0" -m "`printf "<b>HL-1110 resetter requires root priveleges</b>"`"
+  exit $?
+fi
 
 # CONSTANTS
 declare -r APP_NAME="HL-1110 resetter v1.0"
-
-# ASK FOR ADMIN PRIVILEGES
-if [ $EUID != 0 ]; then
-  gksudo "$0" --description="$APP_NAME"
-  exit $?
-fi
 
 # If printer path is valid
 function is_valid_printer()
