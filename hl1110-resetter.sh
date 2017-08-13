@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# HL-1110 resetter v1.0
+# HL-1110 resetter
 #
 # Copyright (C) 2017 Filis Futsarov
 #
@@ -19,16 +19,13 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 # ASK FOR ADMIN PRIVILEGES
-# if [ $EUID != 0 ]; then
-#   gksudo "$0" -m "`printf "<b>asdasd</b>\n\nasdasd"`"
-#   exit $?
-# fi
+if [ $EUID != 0 ]; then
+  gksudo "$0" -m "`printf "<b>asdasd</b>\n\nasdasd"`"
+  exit $?
+fi
 
 # CONSTANTS
-declare -r APP_NAME="HL-1110 printer utility v1.0"
-
-# rm fucking device!
-# ARRAY+=('foo')
+declare -r APP_NAME="HL-1110 resetter v1.0"
 
 function is_valid_printer()
 {
@@ -118,8 +115,8 @@ function get_printer_output()
 function cmd_get_printer_status_code()
 {
     send_pjl "$1" "INFO STATUS"
-    declare output=$(get_printer_output "$1")
-    declare status=$(echo "$output" | sed -n '/^CODE/p' | cut -d "=" -f2 | tr -d '\n' | tr -d '\r')
+    local output=$(get_printer_output "$1")
+    local status=$(echo "$output" | sed -n '/^CODE/p' | cut -d "=" -f2 | tr -d '\n' | tr -d '\r')
     echo "$status"
 }
 
@@ -128,10 +125,8 @@ function cmd_get_printer_status_code()
 function cmd_get_printer_num_prints()
 {
     send_pjl "$1" "INFO PAGECOUNT"
-
-    declare output=$(get_printer_output "$1")
-    declare num_prints=$(echo "$output" | sed -n '/^PAGECOUNT=/p' | cut -d "=" -f2 | tr -d '\n' | tr -d '\r')
-
+    local output=$(get_printer_output "$1")
+    local num_prints=$(echo "$output" | sed -n '/^PAGECOUNT=/p' | cut -d "=" -f2 | tr -d '\n' | tr -d '\r')
     echo "$num_prints"
 }
 
@@ -292,13 +287,6 @@ function get_message_by_status_code()
     ;;
   esac
 }
-
-# code=$(cmd_get_printer_status_code "/dev/usb/lp0")
-# get_message_by_status_code "$code"
-#
-# cmd_get_printer_num_prints "/dev/usb/lp0"
-#
-# exit
 
 
 # Variables
