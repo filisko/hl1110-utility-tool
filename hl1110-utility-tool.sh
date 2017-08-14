@@ -19,7 +19,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 
 # CONSTANTS
-declare -r APP_NAME="HL-1110 resetter v1.0"
+declare -r APP_NAME="HL-1110 utility tool v1.0"
 
 # ASK FOR ADMIN PRIVILEGES
 if [ $EUID != 0 ]; then
