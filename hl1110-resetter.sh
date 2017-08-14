@@ -59,9 +59,9 @@ function send_pjl()
     end_at=$(($SECONDS+7))
 
     while [ $SECONDS -lt $end_at ]; do
-      sleep 0.5
-
       if [ $(is_valid_printer "$printer_path") ]; then
+          sleep 0.5
+
           # Continue after printer is not busy (if it's at all!)
           while true; do
             fuser -s "$printer_path"
@@ -83,21 +83,17 @@ function send_pjl()
 # Get printer's output
 function get_printer_output()
 {
-    local printer_path="$1"
+    # Stop trying to get some output after 10 seconds
+    end_at=$(($SECONDS+3))
 
-    # Stop trying to get output after 10 seconds
-    end_at=$(($SECONDS+10))
+    while [ "$SECONDS" -lt "$end_at" ]; do
+      output=$(cat "$1")
+      lines=$(echo "$output" | wc -l)
 
-    while [ $SECONDS -lt $end_at ]; do
-      if [ $(is_valid_printer "$printer_path") ]; then
-          output=$(cat "$printer_path")
-          lines=$(echo "$output" | wc -l)
-
-          if [ $lines -gt 2 ]
-          then
-            echo "$output"
-            break
-          fi
+      if [ $lines -gt 2 ]
+      then
+        echo "$output"
+        break
       fi
     done
 }
@@ -106,11 +102,10 @@ function get_printer_output()
 function cmd_get_printer_status_code()
 {
     if [ $(send_pjl "$1" "INFO STATUS") ]; then
-        local output=$(get_printer_output "$1")
+        output=$(get_printer_output "$1")
 
         if [ "$output" ]; then
-            local status_code=$(echo "$output" | sed -n '/^CODE/p' | cut -d "=" -f2 | tr -d '\n' | tr -d '\r')
-
+            status_code=$(echo "$output" | sed -n '/^CODE/p' | cut -d "=" -f2 | tr -d '\n' | tr -d '\r')
             echo "$status_code"
         fi
     fi
@@ -120,10 +115,10 @@ function cmd_get_printer_status_code()
 function cmd_get_printer_num_prints()
 {
     if [ $(send_pjl "$1" "INFO PAGECOUNT") ]; then
-        local output=$(get_printer_output "$1")
+        output=$(get_printer_output "$1")
 
         if [ "$output" ]; then
-            local num_prints=$(echo "$output" | sed -n '/^PAGECOUNT=/p' | cut -d "=" -f2 | tr -d '\n' | tr -d '\r')
+            num_prints=$(echo "$output" | sed -n '/^PAGECOUNT=/p' | cut -d "=" -f2 | tr -d '\n' | tr -d '\r')
 
             echo "$num_prints"
         fi
@@ -316,8 +311,8 @@ while true; do
 
   case $? in
     0)
-      declare printers="/dev/usb/lp1"
-    #   declare printers=$(get_printers)
+    #   declare printers="/dev/usb/lp1"
+      declare printers=$(get_printers)
       declare -i num_printers=$(grep -o "/" <<< "$printers" | wc -l | awk '{print $1/3}')
 
       if [ "$num_printers" -eq 0 ]; then
@@ -361,10 +356,10 @@ while true; do
             case $action in
               "$ACTION_SHOW_STATUS")
                 (
-                  local -i status_code=$(cmd_get_printer_status_code "$printers")
+                  status_code=$(cmd_get_printer_status_code "$printers")
 
                   if [ "$status_code" ]; then
-                      local status_message=$(get_message_by_status_code "$status_code")
+                      status_message=$(get_message_by_status_code "$status_code")
                       echo "# Status code: $status_code\nMessage: $status_message"
                   else
                       echo "# Could not get printer's current status."
@@ -379,7 +374,7 @@ while true; do
               ;;
               "$ACTION_SHOW_NUM_PRINTED")
                 (
-                  local -i num_prints=$(cmd_get_printer_num_prints "$printers")
+                  num_prints=$(cmd_get_printer_num_prints "$printers")
 
                   if [ "$num_prints" ]; then
                     echo "# Number of printed pages: $num_prints"
@@ -426,9 +421,9 @@ while true; do
                     if [ $(cmd_reset_printer "$printers") ]; then
                         # Better don't do anything during 15 seconds
                         echo "20"; sleep 2
+                        echo "# Resetting now, please wait 10 seconds ..."
                         echo "30"; sleep 2
                         echo "40"; sleep 2
-                        echo "# Resetting ..."
                         echo "50"; sleep 2
                         echo "60"; sleep 2
                         echo "70"; sleep 1
