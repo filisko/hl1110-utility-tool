@@ -1,8 +1,8 @@
 #!/bin/bash
 #
-# HL-1110 resetter
+# Brother HL-1110 printer utility tool
 #
-# Copyright (C) 2017 Filis Futsarov
+# Copyright (C) 2017 Filis Futsarov <filisfutsarov@gmail.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -17,7 +17,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-
 
 # CONSTANTS
 declare -r APP_NAME="HL-1110 resetter v1.0"
@@ -83,8 +82,8 @@ function send_pjl()
 # Get printer's output
 function get_printer_output()
 {
-    # Stop trying to get some output after 10 seconds
-    end_at=$(($SECONDS+3))
+    # Stop trying to get some output after 5 seconds
+    end_at=$(($SECONDS+5))
 
     while [ "$SECONDS" -lt "$end_at" ]; do
       output=$(cat "$1")
@@ -170,13 +169,65 @@ function get_message_by_status_code()
     10029) echo "Formfeeding"; ;;
     10030) echo "Print Job Received"; ;;
     10031) echo "Engine Cleaning"; ;;
+    # PJL Parser Errors
+    20001) echo "Generic syntax error (entire PJL command ignored)"; ;;
+    20002) echo "Unsupported command"; ;;
+    20004) echo "Unsupported personality, system, or I/O port"; ;;
+    20005) echo "PJL command buffer overflow"; ;;
+    20006) echo "Illegal character or line terminated by the Universal Exit Language command"; ;;
+    20007) echo "<WS> or [<CR>]<LF> missing after closing quotes"; ;;
+    20008) echo "Invalid character in an alphanumeric value"; ;;
+    20009) echo "Invalid character in a numeric value"; ;;
+    20010) echo "Invalid character at the start of a string, alphanumeric value, or numeric value"; ;;
+    20011) echo "String missing closing double-quote character"; ;;
+    20012) echo "Numeric value starts with a decimal point"; ;;
+    20013) echo "Numeric value does not contain any digits"; ;;
+    20014) echo "No alphanumeric value after command modifier"; ;;
+    20015) echo "Option name and equal sign encountered, but the value field is missing"; ;;
+    20016) echo "More than one command modifier"; ;;
+    20017) echo "Command modifier encountered after an option(command modifier must precede option)"; ;;
+    20018) echo "Command not an alphanumeric value"; ;;
+    20019) echo "Numeric value encountered when an alphanumeric value expected"; ;;
+    20020) echo "String encountered when an alphanumeric valueexpected"; ;;
+    20021) echo "Unsupported command modifier"; ;;
+    20022) echo "Command modifier missing"; ;;
+    20023) echo "Option missing"; ;;
+    20024) echo "Extra data received after option name (used for commands like SET that limit the number of options supported)"; ;;
+    20025) echo "Two decimal points in a numeric value"; ;;
+    20026) echo "Invalid binary value"; ;;
+    # PJL Parser Warnings
+    25001) echo "Generic warning error (part of the PJL command ignored)"; ;;
+    25002) echo "PJL prefix missing"; ;;
+    25003) echo "Alphanumeric value too long"; ;;
+    25004) echo "String too long"; ;;
+    25005) echo "Numeric value too long"; ;;
+    25006) echo "Unsupported option name"; ;;
+    25007) echo "Option name requires a value which is missing"; ;;
+    25008) echo "Option name requires a value of a different type"; ;;
+    25009) echo "Option name received with a value, but this option does not support values"; ;;
+    25010) echo "Same option name received more than once"; ;;
+    25011) echo "Ignored option name due to value underflow or overflow"; ;;
+    25012) echo "Value for option experienced data loss due to data conversion (value truncated or rounded)"; ;;
+    25013) echo "Value for option experienced data loss due to value being out of range; the value used was the closest supported limit"; ;;
+    25014) echo "Value is of the correct type, but is out of range (value wasignored)"; ;;
+    25016) echo "Option name received with an alphanumeric value, butthis value is not supported"; ;;
+    25017) echo "String empty, option ignored"; ;;
+    25018) echo "A Universal Exit Language command wasexpected but not found"; ;;
+    # PJL Semantic Errors
+    27001) echo "Generic semantic error"; ;;
+    27002) echo "EOJ command encountered without a previouslymatching JOB command. An EOJ command does nothave a matching JOB command if the number of validEOJ commands received is greater than the number ofvalid JOB commands received"; ;;
+    27003) echo "Password protected—attempted to change NVRAM value when password is set and the job is not a secure PJL job"; ;;
+    27004) echo "Cannot modify the value of a read-only variable"; ;;
+    27005) echo "Can only use DEFAULT with this variable; cannot use SET"; ;;
+    27006) echo "Attempted to pass a NULL string to a command orcommand option that requires the string to contain atleast one character"; ;;
+    27007) echo "Attempted to DEFAULT a variable which can only be SET"; ;;
     # Operator Intervention Conditions
     40000) echo "Sleep Mode"; ;;
     40010) echo "Install Toner Cartridge or No electric contact with Toner Cartridge"; ;;
     40011) echo "Accessing Toner Cartridge"; ;;
-    40019) echo "REMOVE PAPER FROM [bin name]"; ;;
+    40019) echo "Remove paper"; ;;
     40020) echo "No MICR Toner or Install MICR Toner Cartridge"; ;;
-    40021) echo "Printer Open or NO EP Cart or Close Printer Cover"; ;;
+    40021) echo "Printer Open. Close Printer Cover"; ;;
     40022) echo "Paper Jam or Remove Paper Jam"; ;;
     40024) echo "FE Cartridge"; ;;
     40026) echo "PC Install or Install Tray 2"; ;;
@@ -229,13 +280,13 @@ function get_message_by_status_code()
     40121) echo "Close face-up output bin"; ;;
     40122) echo "Duplexer must be installed"; ;;
     40123) echo "Duplexer error, remove duplexer"; ;;
-    40124) echo "Bad duplexer connection"; ;;
+    40124) echo "Bad duplexer Example of messages: connection"; ;;
     40128) echo "Drum Error replace Drum Kit"; ;;
     40129) echo "Drum Life Out replace Drum Kit"; ;;
     40130) echo "Drum Life Low replace Drum Kit"; ;;
-    40131) echo "Transfer Kit out Replace Kit"; ;;
-    40132) echo "TRANSFER KIT LOW REPLACE KIT"; ;;
-    40141) echo "WASTE TONER FULL REPLACE DRUM KIT"; ;;
+    40131) echo "Transfer Kit out replace Kit"; ;;
+    40132) echo "Transfer Kit low replace Kit"; ;;
+    40141) echo "Waste toner full, replace Drum Kit"; ;;
     40142) echo "Install Drum Kit"; ;;
     40143) echo "Reinstall Transfer Belt"; ;;
     40144) echo "Press Go to Print, Press Select to Change Toner"; ;;
@@ -439,6 +490,7 @@ while true; do
                     --title="$APP_NAME" \
                     --text="Trying to reset the printer ..." \
                     --progress=0 \
+                    --ok-label="OK" \
                     --width=300 \
                     --no-cancel
                 fi
@@ -463,7 +515,7 @@ while true; do
         zenity \
         --info \
         --title="$APP_NAME" \
-        --text="HL-1110 printer resetter is a tool that will allow you to ..." \
+        --text="This tool that will allow you to ..." \
         --ok-label="Good to know!" \
         --ellipsize
       else
