@@ -34,7 +34,7 @@ function is_valid_printer()
   local printer_path="$1"
   if  [ -c "$printer_path" ] && [ $(sudo usb_printerid "$printer_path" | grep "HL-111[0-9] series" -c) -gt 0 ]; then
     echo 1
-  elif ! [ -c "$printer_path" ]; then
+  elif [ -f "$printer_path" ] && ! [ -c "$printer_path" ]; then
     rm "$printer_path"
   fi
 }
@@ -55,59 +55,79 @@ function send_pjl()
     local printer_path="$1"
     local pjl_command="$2"
 
-    while true; do
+    # Stop trying to send the PJL command after 7 seconds
+    end_at=$(($SECONDS+7))
+
+    while [ $SECONDS -lt $end_at ]; do
       sleep 0.5
 
-      # Continue after printer is not busy (if it's at all!)
-      while true; do
-        fuser -s "$printer_path"
-        if [ $? -ne 0 ]
-        then
-          break
-        fi
-      done
+      if [ $(is_valid_printer "$printer_path") ]; then
+          # Continue after printer is not busy (if it's at all!)
+          while true; do
+            fuser -s "$printer_path"
+            if [ $? -ne 0 ]
+            then
+              break
+            fi
+          done
 
-      echo -e "\e%-12345X@PJL\r\n@PJL $pjl_command \r\n\e%-12345X" > "$printer_path"
-      echo -e "\e" > "$printer_path"
-      break
+          echo -e "\e%-12345X@PJL\r\n@PJL $pjl_command \r\n\e%-12345X" > "$printer_path"
+          echo -e "\e" > "$printer_path"
+
+          echo 1
+          break
+      fi
     done
 }
 
 # Get printer's output
 function get_printer_output()
 {
+    local printer_path="$1"
+
     # Stop trying to get output after 10 seconds
     end_at=$(($SECONDS+10))
 
     while [ $SECONDS -lt $end_at ]; do
-        # while true; do
-          output=$(cat "$1")
+      if [ $(is_valid_printer "$printer_path") ]; then
+          output=$(cat "$printer_path")
           lines=$(echo "$output" | wc -l)
+
           if [ $lines -gt 2 ]
           then
             echo "$output"
             break
           fi
-        # done
+      fi
     done
 }
 
 # Get printer's status code
 function cmd_get_printer_status_code()
 {
-    send_pjl "$1" "INFO STATUS"
-    local output=$(get_printer_output "$1")
-    local status=$(echo "$output" | sed -n '/^CODE/p' | cut -d "=" -f2 | tr -d '\n' | tr -d '\r')
-    echo "$status"
+    if [ $(send_pjl "$1" "INFO STATUS") ]; then
+        local output=$(get_printer_output "$1")
+
+        if [ "$output" ]; then
+            local status_code=$(echo "$output" | sed -n '/^CODE/p' | cut -d "=" -f2 | tr -d '\n' | tr -d '\r')
+
+            echo "$status_code"
+        fi
+    fi
 }
 
 # Get printer's printed pages number
 function cmd_get_printer_num_prints()
 {
-    send_pjl "$1" "INFO PAGECOUNT"
-    local output=$(get_printer_output "$1")
-    local num_prints=$(echo "$output" | sed -n '/^PAGECOUNT=/p' | cut -d "=" -f2 | tr -d '\n' | tr -d '\r')
-    echo "$num_prints"
+    if [ $(send_pjl "$1" "INFO PAGECOUNT") ]; then
+        local output=$(get_printer_output "$1")
+
+        if [ "$output" ]; then
+            local num_prints=$(echo "$output" | sed -n '/^PAGECOUNT=/p' | cut -d "=" -f2 | tr -d '\n' | tr -d '\r')
+
+            echo "$num_prints"
+        fi
+    fi
 }
 
 # Print printer's config
@@ -280,7 +300,7 @@ while true; do
     MSG_MAIN_TEXT="Please, make sure your HL-1110 printer is turned\non and connected to your computer, then try again."
     MSG_MAIN_OK="Try again"
   else
-    MSG_MAIN_TEXT="If your HL-1110 printer is turned on and\nconnected to your computer but you still\ncan't continue, please send me an email:\n\n<b>$AUTHOR_EMAIL</b>"
+    MSG_MAIN_TEXT="If your HL-1110 printer is turned on and\nconnected to your computer but you still\ncan't continue, please send me an email as detailed as possible:\n\n<b>$AUTHOR_EMAIL</b>"
   fi
 
   main=$(
@@ -296,7 +316,8 @@ while true; do
 
   case $? in
     0)
-      declare printers=$(get_printers)
+      declare printers="/dev/usb/lp1"
+    #   declare printers=$(get_printers)
       declare -i num_printers=$(grep -o "/" <<< "$printers" | wc -l | awk '{print $1/3}')
 
       if [ "$num_printers" -eq 0 ]; then
@@ -340,24 +361,36 @@ while true; do
             case $action in
               "$ACTION_SHOW_STATUS")
                 (
-                  declare code=$(cmd_get_printer_status_code "$printers")
-                  declare message=$(get_message_by_status_code "$code")
-                  echo "# Status code: $code\nMessage: $message"
+                  local -i status_code=$(cmd_get_printer_status_code "$printers")
+
+                  if [ "$status_code" ]; then
+                      local status_message=$(get_message_by_status_code "$status_code")
+                      echo "# Status code: $status_code\nMessage: $status_message"
+                  else
+                      echo "# Could not get printer's current status."
+                  fi
                 ) | zenity --progress \
                   --title="$APP_NAME" \
-                  --text="Getting printer's status ..." \
+                  --text="Trying to get printer's current status ..." \
                   --pulsate \
+                  --ok-label="OK" \
                   --width=300 \
                   --no-cancel
               ;;
               "$ACTION_SHOW_NUM_PRINTED")
                 (
-                  num_prints=$(cmd_get_printer_num_prints "$printers")
-                  echo "# Number of printed pages: $num_prints"
+                  local -i num_prints=$(cmd_get_printer_num_prints "$printers")
+
+                  if [ "$num_prints" ]; then
+                    echo "# Number of printed pages: $num_prints"
+                  else
+                    echo "# Could not get printer's number of printed pages."
+                  fi
                 ) | zenity --progress \
                   --title="$APP_NAME" \
-                  --text="Getting number of printed pages ..." \
+                  --text="Trying to get number of printed pages ..." \
                   --pulsate \
+                  --ok-label="OK" \
                   --width=300 \
                   --no-cancel
               ;;
@@ -367,7 +400,19 @@ while true; do
                 --ellipsize
                 if [ $? -eq 0 ]
                 then
-                  cmd_print_printer_config "$printers"
+                  (
+                    if [ $(cmd_print_printer_config "$printers") ]; then
+                        echo "# Print job successfully sent!"
+                    else
+                        echo "# Printing job could not be sent."
+                    fi
+                  ) | zenity --progress \
+                    --title="$APP_NAME" \
+                    --text="Sending print basic information job ..." \
+                    --pulsate \
+                    --ok-label="OK" \
+                    --width=300 \
+                    --no-cancel
                 fi
               ;;
               "$ACTION_RESET_CONFIG")
@@ -377,22 +422,27 @@ while true; do
                 if [ $? -eq 0 ]
                 then
                   (
-                    # Takes about 15 seconds to be resetted
                     echo "10"
-                    cmd_reset_printer "$printers"
-                    echo "20"; sleep 2
-                    echo "30"; sleep 2
-                    echo "40"; sleep 2
-                    echo "50"; sleep 2
-                    echo "60"; sleep 2
-                    echo "70"; sleep 1
-                    echo "80"; sleep 2
-                    echo "90"; sleep 2
+                    if [ $(cmd_reset_printer "$printers") ]; then
+                        # Better don't do anything during 15 seconds
+                        echo "20"; sleep 2
+                        echo "30"; sleep 2
+                        echo "40"; sleep 2
+                        echo "# Resetting ..."
+                        echo "50"; sleep 2
+                        echo "60"; sleep 2
+                        echo "70"; sleep 1
+                        echo "80"; sleep 2
+                        echo "90"; sleep 2
+                        echo "# The printer should be resetted by now!"
+                    else
+                        echo "# Printer could not be resetted."
+                    fi
                     echo "100"
-                    echo "# Should be resetted by now!"
+
                   ) | zenity --progress \
                     --title="$APP_NAME" \
-                    --text="Resetting printer ..." \
+                    --text="Trying to reset the printer ..." \
                     --progress=0 \
                     --width=300 \
                     --no-cancel
@@ -419,7 +469,7 @@ while true; do
         --info \
         --title="$APP_NAME" \
         --text="HL-1110 printer resetter is a tool that will allow you to ..." \
-        --ok-label="Go back" \
+        --ok-label="Good to know!" \
         --ellipsize
       else
         exit
