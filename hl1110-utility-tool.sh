@@ -515,7 +515,7 @@ while true; do
         zenity \
         --info \
         --title="$APP_NAME" \
-        --text="This tool that will allow you to ..." \
+        --text="To read more information about this tool please visit: https://github.com/filisko/hl1110-utility-tool" \
         --ok-label="Good to know!" \
         --ellipsize
       else
