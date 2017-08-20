@@ -51,8 +51,8 @@ So we can use the number of printed pages as an indicator of how close we are fr
 
 This action will just print a page with useful information about the printer.
 
-- This is how this page looks **before** doing a reset: [press here to see the image](images/before-reset.jpg)
-- This is how this page looks **after** doing a reset: [press here to see the iamge](images/after-reset.jpg)
+- This is how the printed page will look like **before** doing a reset: [press here to see the image](images/before-reset.jpg)
+- TThis is how the printed page will look like **after** doing a reset: [press here to see the iamge](images/after-reset.jpg)
 
 ![Print basic info. image](images/basic_info-act.png)
 
