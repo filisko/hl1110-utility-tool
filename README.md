@@ -72,6 +72,5 @@ And after you've confirmed the action, it will take about 15 seconds to finish t
 
 ### Suggestions, ideas, etc.
 
-If you have any suggestions, ideas or anything else, just write me an email (filisfutsarov@gmail.com) or create an issue in this repository.
+If you have suggestions, ideas or anything else, just write me an email (filisfutsarov@gmail.com) or create an issue in this repository.
 
-I still have more ideas to implement to this little script.
