@@ -2,7 +2,7 @@
 #
 # Brother HL-1110 printer utility tool
 #
-# Copyright (C) 2017 Filis Futsarov <filisfutsarov@gmail.com>
+# Copyright (C) 2019 Filis Futsarov <filisfutsarov@gmail.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -22,8 +22,9 @@
 declare -r APP_NAME="HL-1110 utility tool v1.0"
 
 # ASK FOR ADMIN PRIVILEGES
-if [ $EUID != 0 ]; then
-  gksudo "$0" --description="$APP_NAME"
+sudo -n true &> /dev/null
+if [ $(echo $?) -ne 0 ]; then
+  zenity --password --title="$APP_NAME" | sudo -S "$0"
   exit $?
 fi
 
