@@ -12,11 +12,7 @@ This tool will mainly allow you to do the actions listed below (perhaps more in 
 
 ## How to install
 
-To install this script you have two options, install it through the available Debian package (recommended) or just download the script with wget.
-
-[Click here to download the latest available Debian package (v1.0).](https://github.com/filisko/hl1110-utility-tool/releases/download/v1.0/hl1110-utility-tool.deb)
-
-To download it with wget simply do:
+Execute the following commands to download, give execution permissions and execute:
 ```
 wget https://raw.githubusercontent.com/filisko/hl1110-utility-tool/master/hl1110-utility-tool.sh
 chmod +x hl1110-utility-tool.sh # execution permission
