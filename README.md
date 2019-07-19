@@ -15,8 +15,8 @@ This tool will mainly allow you to do the actions listed below (perhaps more in 
 Execute the following commands to download, give execution permissions and execute:
 ```
 wget https://raw.githubusercontent.com/filisko/hl1110-utility-tool/master/hl1110-utility-tool.sh
-chmod +x hl1110-utility-tool.sh # execution permission
-./hl1110-utility-tool.sh # start
+chmod +x hl1110-utility-tool.sh
+./hl1110-utility-tool.sh
 ```
 
 
