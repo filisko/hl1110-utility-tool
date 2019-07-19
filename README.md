@@ -12,7 +12,7 @@ This tool will mainly allow you to do the actions listed below (perhaps more in 
 
 ## How to install
 
-Execute the following commands to download, give execution permissions and execute:
+Execute the following commands to download, give execution permissions and execute the tool:
 ```
 wget https://raw.githubusercontent.com/filisko/hl1110-utility-tool/master/hl1110-utility-tool.sh
 chmod +x hl1110-utility-tool.sh
