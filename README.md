@@ -8,7 +8,7 @@ This tool will mainly allow you to do the actions listed below (perhaps more in 
     - Hardware related error messages (e.g. 'FUSER Error Cycle Power or FUSER too hot' or 'Fan Motor 1 Failure').
 - Get the current amount of printed pages.
 - Print basic information about printer's status and settings.
-- Reset all printer's internal values (drum percetange, toner percentage, printed pages number, etc.).
+- Reset all printer's internal values (drum percetange, toner percentage, printed pages number, etc.). This will help you if you fill your toner cartridge manually.
 
 ## How to install
 
