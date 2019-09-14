@@ -1,6 +1,6 @@
 # Brother HL-1110 printer utility tool
 
-This tool will mainly allow you to do the actions listed below (perhaps more in the future) in your Brother HL-1110 (or HL-1112) printer.
+What can I do with this?
 
 - Get your printer's current status code (there are more than 300), and translate it to human readable messages. This will help you to better detect a problem in case you experiment strange behaviours in your printer. The remarkable types of messages are:
     - Informational messages (Ready, Warming Up, Toner low ...).
@@ -8,7 +8,7 @@ This tool will mainly allow you to do the actions listed below (perhaps more in 
     - Hardware related error messages (e.g. 'FUSER Error Cycle Power or FUSER too hot' or 'Fan Motor 1 Failure').
 - Get the current amount of printed pages.
 - Print basic information about printer's status and settings.
-- Reset all printer's internal values (drum percetange, toner percentage, printed pages number, etc.). This will help you if you fill your toner cartridge manually.
+- **Reset all** printer's internal values (drum percetange, toner percentage, printed pages number, etc.). This will help you if you fill your toner cartridge manually.
 
 ## How to install
 
