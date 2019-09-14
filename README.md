@@ -16,7 +16,7 @@ Execute the following commands to download, give execution permissions and execu
 ```
 wget https://raw.githubusercontent.com/filisko/hl1110-utility-tool/master/hl1110-utility-tool.sh
 chmod +x hl1110-utility-tool.sh
-./hl1110-utility-tool.sh
+sudo ./hl1110-utility-tool.sh
 ```
 
 
