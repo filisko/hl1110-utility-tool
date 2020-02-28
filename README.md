@@ -26,7 +26,7 @@ The main window that you will see once opened will be a simple dialog where you 
 ![Main image](images/main.png)
 
 ### Actions
-And once the printer is detected after pressing the 'Yes, continue' button. The following menu will appear. Simple, right?  
+Once the printer is detected after you press 'Yes, continue' button. The following menu will appear. Simple, right?  
 ![Menu image](images/menu.png)
 
 #### Action 1: Show current printer's status
