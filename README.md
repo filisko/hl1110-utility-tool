@@ -66,7 +66,7 @@ And after you've confirmed the action, it will take about 15 seconds to finish t
 ![Reset image 2](images/reset-act-2.png)
 
 
-### Suggestions, ideas, etc.
+### Sugestions or bugs
 
-If you have suggestions, ideas or anything else, just write me an email (filisfutsarov@gmail.com) or create an issue in this repository.
+Write me an email (filisfutsarov@gmail.com) or create an issue in the repository.
 
