@@ -21,6 +21,11 @@
 # CONSTANTS
 declare -r APP_NAME="HL-1110 utility tool v1.0"
 
+if [ `id -u` -ne 0 ]; then
+  echo Please run this script as root or using sudo!
+  exit
+fi
+
 # ASK FOR ADMIN PRIVILEGES
 sudo -n true &> /dev/null
 if [ $(echo $?) -ne 0 ]; then
@@ -395,7 +400,7 @@ while true; do
             --title="$APP_NAME" \
             --text="Select an action to perform on the connected HL-1110 printer." \
             --column="Action" \
-            --width=400 --height=250 \
+            --width=400 --height=450 \
             --cancel-label="Exit" \
             --ok-label="Execute" \
               "$ACTION_SHOW_STATUS" \
